@@ -1,6 +1,5 @@
-import os
-import sys
 import argparse
+import sys
 
 #
 # Argument
@@ -13,16 +12,16 @@ args = parser.parse_args()
 ##################
 # Files
 ##################
-#if args.inf != "none" and args.outf != "none":
-#	try:
-#		fi = open(args.inf)
-#		fo = open(args.outf,"w")
-#	except IOError:
-#		print("Cannot recognize the filenames")
-#	files = []
-#else:
-#	print("Please enter path for input/output files")
-#	sys.exit()
+if args.inf != "none" and args.outf != "none":
+	try:
+		fi = open(args.inf)
+		fo = open(args.outf,"w")
+	except IOError:
+		print("Cannot recognize the filenames")
+	files = []
+else:
+	print("Please enter path for input/output files")
+	sys.exit()
 
 total_num = 0
 pair_num = 0
@@ -58,7 +57,7 @@ for ii,jj in enumerate(fi):
 			else: flag2num[flag_bin2] = 1
 	if 3 in flags:
 		unmapped_reads += 1
-	if not 12 in flags:
+	if 12 not in flags:
 		chimera_reads += 1
 		fo.write(jj)
 fi.close()
