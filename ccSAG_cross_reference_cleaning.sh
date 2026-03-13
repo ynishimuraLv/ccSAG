@@ -22,25 +22,10 @@ if [ -s $Outdir/QC/${file}_QC_R1_001.fastq ]; then
     echo "Skipped ${file} QC."
 else
 
-# read 1
-fastqc $Seqdir/${file}_R1_001.fastq -j java -o $Outdir/QC > $Outdir/QC/${file}_R1_001_fastqc.stdout 2> $Outdir/QC/${file}_R1_001_fastqc.stderr
-fastq_quality_filter -v -Q 33 -q 25 -p 50 -i $Seqdir/${file}_R1_001.fastq -o $Outdir/QC/${file}_R1_001_step1.fastq > $Outdir/QC/${file}_R1_001_step1.stdout 2> $Outdir/QC/${file}_R1_001_step1.stderr
-perl $prinseq_path/prinseq-lite.pl -trim_qual_right 20 -fastq $Outdir/QC/${file}_R1_001_step1.fastq -out_good $Outdir/QC/${file}_R1_001_step2 2> $Outdir/QC/${file}_R1_001_step2.stderr
-perl $prinseq_path/prinseq-lite.pl -ns_max_p 1 -fastq $Outdir/QC/${file}_R1_001_step2.fastq -out_good $Outdir/QC/${file}_R1_001_step3 2> $Outdir/QC/${file}_R1_001_step3.stderr
-fastqc $Outdir/QC/${file}_R1_001_step3.fastq -j java -o $Outdir/QC > $Outdir/QC/${file}_R1_001_step3_fastqc.stdout 2> $Outdir/QC/${file}_R1_001_step3_fastqc.stderr
-
-# read2
-fastqc $Seqdir/${file}_R2_001.fastq -j java -o $Outdir/QC > $Outdir/QC/${file}_R2_001_fastqc.stdout 2> $Outdir/QC/${file}_R2_001_fastqc.stderr
-fastq_quality_filter -v -Q 33 -q 25 -p 50 -i $Seqdir/${file}_R2_001.fastq -o $Outdir/QC/${file}_R2_001_step1.fastq > $Outdir/QC/${file}_R2_001_step1.stdout 2> $Outdir/QC/${file}_R2_001_step1.stderr
-perl $prinseq_path/prinseq-lite.pl -trim_qual_right 20 -fastq $Outdir/QC/${file}_R2_001_step1.fastq -out_good $Outdir/QC/${file}_R2_001_step2 2> $Outdir/QC/${file}_R2_001_step2.stderr
-perl $prinseq_path/prinseq-lite.pl -ns_max_p 1 -fastq $Outdir/QC/${file}_R2_001_step2.fastq -out_good $Outdir/QC/${file}_R2_001_step3 2> $Outdir/QC/${file}_R2_001_step3.stderr
-fastqc $Outdir/QC/${file}_R2_001_step3.fastq -j /usr/bin/java -o $Outdir/QC > $Outdir/QC/${file}_R2_001_step3_fastqc.stdout 2> $Outdir/QC/${file}_R2_001_step3_fastqc.stderr
-
-python $ccSAGdir/bin/discard_unpair.py $Outdir/QC/${file}_R1_001_step3.fastq $Outdir/QC/${file}_R2_001_step3.fastq $Outdir/QC/${file}_QC_R1_001.fastq $Outdir/QC/${file}_QC_R2_001.fastq
-
-rm $Outdir/QC/${files[${A}]}*step*
-rm $Outdir/QC/${files[${A}]}*std*
-rm $Outdir/QC/${files[${A}]}*fastqc*
+    fastp -q 25 -u 50 -3 -Q 20 \
+                -i $Seqdir/${file}_R1_001.fastq -I $Seqdir/${file}_R2_001.fastq \
+                -o $Outdir/QC/${file}_QC_R1_001.fastq -O $Outdir/QC/${file}_QC_R2_001.fastq \
+                -h $Outdir/QC/${file}.html -j $Outdir/QC/${file}.json
 
 fi
 
