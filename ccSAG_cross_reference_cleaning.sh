@@ -3,11 +3,108 @@
 #$ -cwd
 
 ccSAGdir=$(dirname $0)
-source $ccSAGdir/path.txt
-source $1
 
-# Number of threads (default to 1 if not specified)
-num_threads=${2:-1}
+# Default values
+num_threads=1
+config_file=""
+Outdir=""
+Seqdir=""
+cleanedcontig=""
+spades_option="-m 256 --sc --disable-rr --careful --disable-gzip-output "
+
+# Help function
+show_help() {
+    cat << EOF
+Usage: bash ccSAG_cross_reference_cleaning.sh -o outdir -s seqdir -C outputcontig [options]
+
+Description:
+  Cross-reference genome assembly cleaning pipeline with quality control, assembly, and mapping.
+
+Options:
+  -c, --config <file>           Load settings from config file (optional)
+  -o, --outdir <dir>            Output directory for results (required)
+  -s, --seqdir <dir>            Input sequence directory (required)
+  -C, --cleaned-contig <file>   Output cleaned contig filename (required)
+  -t, --threads <num>           Number of threads to use (default: 1)
+  -O, --spades-option '<opts>'  SPAdes assembly options (default: "-m 256 --sc --disable-rr --careful --disable-gzip-output ")
+  -h, --help                    Show this help message
+
+Examples:
+  # Using short options with required parameters
+  bash ccSAG_cross_reference_cleaning.sh -o /path/to/output -s /path/to/raw/data -C cleaned.fasta
+
+  # With thread specification
+  bash ccSAG_cross_reference_cleaning.sh -o /path/to/output -s /path/to/raw/data -C cleaned.fasta -t 4
+
+  # Using config file
+  bash ccSAG_cross_reference_cleaning.sh -c example_ccSAG_cross_reference_cleaning.config -t 4
+
+  # Custom SPAdes options
+  bash ccSAG_cross_reference_cleaning.sh -o /path/to/output -s /path/to/raw/data -C cleaned.fasta -O "-m 512 --careful"
+
+EOF
+}
+
+# Parse options
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --config|-c)
+            config_file="$2"
+            shift 2
+            ;;
+        --threads|-t)
+            num_threads="$2"
+            shift 2
+            ;;
+        --outdir|-o)
+            Outdir="$2"
+            shift 2
+            ;;
+        --seqdir|-s)
+            Seqdir="$2"
+            shift 2
+            ;;
+        --cleaned-contig|-C)
+            cleanedcontig="$2"
+            shift 2
+            ;;
+        --spades-option|-O)
+            spades_option="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use -h or --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Load config file if provided
+if [ -n "$config_file" ]; then
+    source "$config_file"
+fi
+
+# Check required parameters
+if [ -z "$Outdir" ]; then
+    echo "Error: --outdir option is required"
+    echo "Use -h or --help for usage information"
+    exit 1
+fi
+if [ -z "$Seqdir" ]; then
+    echo "Error: --seqdir option is required"
+    echo "Use -h or --help for usage information"
+    exit 1
+fi
+if [ -z "$cleanedcontig" ]; then
+    echo "Error: --cleaned-contig option is required"
+    echo "Use -h or --help for usage information"
+    exit 1
+fi
 
 mkdir $Outdir -p
 mkdir $Outdir/QC -p
@@ -40,7 +137,7 @@ if [ -s $Outdir/Assemble/${file}_QC_contigs.fasta ]; then
     echo "Skipped ${file} assembly."
 else
 
-$spades_path $spades_option --threads $num_threads -1 $Outdir/QC/${file}_QC_R1_001.fastq -2 $Outdir/QC/${file}_QC_R2_001.fastq -o $Outdir/Assemble/${file}_QC_SPAdes
+spades.py $spades_option --threads $num_threads -1 $Outdir/QC/${file}_QC_R1_001.fastq -2 $Outdir/QC/${file}_QC_R2_001.fastq -o $Outdir/Assemble/${file}_QC_SPAdes
 cp $Outdir/Assemble/${file}_QC_SPAdes/contigs.fasta $Outdir/Assemble/${file}_QC_contigs.fasta
 rm $Outdir/Assemble/${file}_QC_SPAdes/ -r
 
@@ -129,6 +226,6 @@ do
 cat $Outdir/QC/$cleaned_reads >> $Outdir/QC/cleaned_merge.fastq
 done
 
-$spades_path $spades_option --threads $num_threads -s $Outdir/QC/cleaned_merge.fastq -o $Outdir/Assemble/cleaned_merge_SPAdes
+spades.py $spades_option --threads $num_threads -s $Outdir/QC/cleaned_merge.fastq -o $Outdir/Assemble/cleaned_merge_SPAdes
 cp $Outdir/Assemble/cleaned_merge_SPAdes/contigs.fasta $Outdir/$cleanedcontig
 

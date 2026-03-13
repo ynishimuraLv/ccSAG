@@ -1,2 +1,0 @@
-spades_path=XXXX/SPAdes-XXXX/bin/spades.py  #Path of SPAdes
-prinseq_path=XXXX/prinseq-lite-XXXX  #Path of PRINSEQ
