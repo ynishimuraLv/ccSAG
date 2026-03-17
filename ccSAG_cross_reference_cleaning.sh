@@ -133,30 +133,33 @@ for r1 in "$Seqdir"/*_R1*.f*q*; do
 
     fi
 
-######
-# Assemble
-######
-if [ -s $Outdir/Assemble/${file}_QC_contigs.fasta ]; then
-    echo "Skipped ${file} assembly."
-else
+    ######
+    # Assemble
+    ######
+    if [ -s $Outdir/Assemble/${sample}_QC_contigs.fasta ]; then
+        echo "Skipped ${sample} assembly."
+    else
 
-spades.py $spades_option --threads $num_threads -1 $Outdir/QC/${file}_QC_R1_001.fastq -2 $Outdir/QC/${file}_QC_R2_001.fastq -o $Outdir/Assemble/${file}_QC_SPAdes
-cp $Outdir/Assemble/${file}_QC_SPAdes/contigs.fasta $Outdir/Assemble/${file}_QC_contigs.fasta
-rm $Outdir/Assemble/${file}_QC_SPAdes/ -r
+        spades.py $spades_option --threads $num_threads \
+                  -1 $Outdir/QC/${sample}_QC_R1_001.fastq \
+                  -2 $Outdir/QC/${sample}_QC_R2_001.fastq \
+                  -o $Outdir/Assemble/${sample}_QC_SPAdes
+        cp $Outdir/Assemble/${sample}_QC_SPAdes/contigs.fasta $Outdir/Assemble/${sample}_QC_contigs.fasta
+        rm $Outdir/Assemble/${sample}_QC_SPAdes/ -r
 
-fi
+    fi
 
-######
-# make mapping index for cross reference
-#####a
-if [ -s $Outdir/Mapping_index/${file}_QC_contigs_500_index.amb ]; then
-    echo "Skipped ${file} bwa indexing."
-else
+    ######
+    # make mapping index for cross reference
+    #####a
+    if [ -s $Outdir/Mapping_index/${sample}_QC_contigs_500_index.amb ]; then
+        echo "Skipped ${sample} bwa indexing."
+    else
 
-python $ccSAGdir/bin/longercontig.py $Outdir/Assemble/${file}_QC_contigs.fasta $Outdir/Assemble/${file}_QC_contigs_500.fasta 500
-bwa index -p $Outdir/Mapping_index/${file}_QC_contigs_500_index $Outdir/Assemble/${file}_QC_contigs_500.fasta
+        python $ccSAGdir/bin/longercontig.py $Outdir/Assemble/${sample}_QC_contigs.fasta $Outdir/Assemble/${sample}_QC_contigs_500.fasta 500
+        bwa index -p $Outdir/Mapping_index/${sample}_QC_contigs_500_index $Outdir/Assemble/${sample}_QC_contigs_500.fasta
 
-fi
+    fi
 
 done
 
