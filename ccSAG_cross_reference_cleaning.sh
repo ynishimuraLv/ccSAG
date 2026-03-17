@@ -217,7 +217,7 @@ for r1 in "$Outdir/QC"/*_QC_R1.fq.gz; do
     done
     rm -r $Outdir/${file}_chimera
 
-    cat $Outdir/QC/${file}_multicut_chimera.fastq $Outdir/QC/${file}_normal_R1_001.fastq $Outdir/QC/${file}_normal_R2_001.fastq > $Outdir/QC/${file}_cleaned.fastq
+    cat $Outdir/QC/${file}_multicut_chimera.fastq $Outdir/QC/${file}_normal_R1_001.fastq $Outdir/QC/${file}_normal_R2_001.fastq > $Outdir/QC/${file}_QC_cleaned.fastq
 
 done
 
