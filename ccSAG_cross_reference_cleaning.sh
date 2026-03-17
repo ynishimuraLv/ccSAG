@@ -112,23 +112,26 @@ mkdir $Outdir/Assemble -p
 mkdir $Outdir/Mapping -p
 mkdir $Outdir/Mapping_index -p
 
-for file in `\ls $Seqdir | grep "R1_001.fastq$" | sed 's/_R1_001.fastq/\t/g'`;
-do
-
 ######
 # QC
 ######
-if [ -s $Outdir/QC/${file}_QC_R1_001.fastq ]; then
-    echo "Skipped ${file} QC."
-else
 
+for r1 in "$Seqdir"/*_R1*.f*q*; do
+    r2=${r1/_R1/_R2}
+    sample=$(basename "$r1" | sed -E 's/_R1(_001)?\.(fastq|fq)(\.gz)?$//')
+    ######
+    # QC
+    ######
+    if [ -s $Outdir/QC/${sample}.html ]; then
+        echo "Skipped ${sample} QC."
+    else
     fastp -q 25 -u 50 -3 -Q 20 \
-                -i $Seqdir/${file}_R1_001.fastq -I $Seqdir/${file}_R2_001.fastq \
-                -o $Outdir/QC/${file}_QC_R1_001.fastq -O $Outdir/QC/${file}_QC_R2_001.fastq \
-                -h $Outdir/QC/${file}.html -j $Outdir/QC/${file}.json \
-                --thread $num_threads
+          -i $r1 -I $r2 \
+          -o $Outdir/QC/${sample}_QC_R1_001.fastq -O $Outdir/QC/${sample}_QC_R2_001.fastq \
+          -h $Outdir/QC/${sample}.html -j $Outdir/QC/${sample}.json \
+          --thread $num_threads
 
-fi
+    fi
 
 ######
 # Assemble
