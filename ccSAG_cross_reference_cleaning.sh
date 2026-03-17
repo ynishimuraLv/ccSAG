@@ -164,63 +164,65 @@ for r1 in "$Seqdir"/*_R1*.f*q*; do
 done
 
 
-for file in `\ls $Outdir/QC | grep "_QC_R1_001.fastq$" | sed 's/_R1_001.fastq/\t/g'`;
-do
+for r1 in "$Outdir/QC"/*_QC_R1.fq.gz; do
+    file=$(basename "$r1" | sed -E 's/_QC_R1.fq.gz$//')
+    r2=${r1/_R1/_R2}
 
-######
-# cross reference mapping
-######
+    ######
+    # cross reference mapping
+    ######
 
-for index in `\ls $Outdir/QC | grep "_QC_R1_001.fastq$" | sed 's/_R1_001.fastq/\t/g'`;
-do
+    for file1 in "$Outdir"/QC/*_QC_R1.fq.gz; do
+        index=$(basename "$file1" | sed -E 's/_QC_R1.fq.gz$//')
+        classify="$Outdir/Mapping/${file}_${index}_uniq_classify.sam"
+        if [ -s "$classify" ]; then
+            echo "Skipped ${file} mapping to ${index}."
+        else
+            if [[ "$file" != "$index" ]]; then
+                samfile="$Outdir/Mapping/${file}_${index}.sam"
+                samfile_uniq="$Outdir/Mapping/${file}_${index}_uniq.sam"
+                echo "Mapping ${file}_${index}"
+                bwa mem -t $num_threads $Outdir/Mapping_index/${index}_QC_contigs_500_index ${r1} ${r2} > "$samfile"
+                python $ccSAGdir/bin/get_primary_result_from_sam.py -i $samfile -o $samfile_uniq
+                grep -e "^@" -v $samfile_uniq > $classify
+                rm $samfile
+            fi
+        fi
+    done
 
-if [ -s $Outdir/Mapping/${file}_${index}_uniq_classify.sam ]; then
-    echo "Skipped ${file} mapping to ${index}."
-else
+    python $ccSAGdir/bin/classify_chimera_read.py $Outdir/Mapping ${file}
 
-if test $file != $index
-then
- bwa mem -t $num_threads $Outdir/Mapping_index/${index}_contigs_500_index $Outdir/QC/${file}_R1_001.fastq $Outdir/QC/${file}_R2_001.fastq > $Outdir/Mapping/${file}_${index}.sam
- python $ccSAGdir/bin/get_primary_result_from_sam.py -i $Outdir/Mapping/${file}_${index}.sam -o $Outdir/Mapping/${file}_${index}_uniq.sam
- grep -e "^@" -v $Outdir/Mapping/${file}_${index}_uniq.sam > $Outdir/Mapping/${file}_${index}_uniq_classify.sam
- rm $Outdir/Mapping/${file}_${index}.sam
-fi
+    mkdir -p $Outdir/${file}_chimera
+    mkdir -p $Outdir/${file}_chimera/QC
+    mkdir -p $Outdir/${file}_chimera/Mapping
 
-fi
+    mv $Outdir/Mapping/${file}_*.fastq $Outdir/QC
+    mv $Outdir/QC/${file}_cut_chimera.fastq $Outdir/${file}_chimera/QC
+    echo -n > $Outdir/QC/${file}_multicut_chimera.fastq
+
+    while test $(wc -l < $Outdir/${file}_chimera/QC/${file}_cut_chimera.fastq) != 0
+        do
+            for file2 in "$Outdir"/QC/*_QC_R1.fq.gz; do
+                index=$(basename "$file2" | sed -E 's/_QC_R1.fq.gz$//')
+                    if test ${file} != ${index}
+                    then
+                        echo "Map ${index} ${file}_chimera"
+                        bwa mem -t $num_threads $Outdir/Mapping_index/${index}_QC_contigs_500_index $Outdir/${file}_chimera/QC/${file}_cut_chimera.fastq > $Outdir/${file}_chimera/Mapping/${file}_${index}.sam
+                        python $ccSAGdir/bin/get_primary_result_from_sam.py -i $Outdir/${file}_chimera/Mapping/${file}_${index}.sam -o $Outdir/${file}_chimera/Mapping/${file}_${index}_uniq.sam
+                        grep -e "^@" -v $Outdir/${file}_chimera/Mapping/${file}_${index}_uniq.sam > $Outdir/${file}_chimera/Mapping/${file}_${index}_uniq_classify.sam
+                    fi
+            done
+
+        python $ccSAGdir/bin/cut_chimera_read.py $Outdir/${file}_chimera/Mapping ${file}
+        cat $Outdir/${file}_chimera/Mapping/${file}_normal_001.fastq >> $Outdir/QC/${file}_multicut_chimera.fastq
+        mv $Outdir/${file}_chimera/Mapping/${file}_cut_chimera.fastq $Outdir/${file}_chimera/QC
+    done
+    rm $Outdir/${file}_chimera -r
+
+    cat $Outdir/QC/${file}_multicut_chimera.fastq $Outdir/QC/${file}_normal_R1_001.fastq $Outdir/QC/${file}_normal_R2_001.fastq > $Outdir/QC/${file}_cleaned.fastq
+
 done
 
-python $ccSAGdir/bin/classify_chimera_read.py $Outdir/Mapping ${file}
-
-mkdir -p $Outdir/${file}_chimera
-mkdir -p $Outdir/${file}_chimera/QC
-mkdir -p $Outdir/${file}_chimera/Mapping
-
-mv $Outdir/Mapping/${file}_*.fastq $Outdir/QC
-mv $Outdir/QC/${file}_cut_chimera.fastq $Outdir/${file}_chimera/QC
-echo -n > $Outdir/QC/${file}_multicut_chimera.fastq
-
-while test $(wc -l < $Outdir/${file}_chimera/QC/${file}_cut_chimera.fastq) != 0
-do
-for index in `\ls $Outdir/QC | grep "_QC_R1_001.fastq$" | sed 's/_R1_001.fastq/\t/g'`;
-do
-if test ${file} != ${index}
-then
- bwa mem -t $num_threads $Outdir/Mapping_index/${index}_contigs_500_index $Outdir/${file}_chimera/QC/${file}_cut_chimera.fastq > $Outdir/${file}_chimera/Mapping/${file}_${index}.sam
- python $ccSAGdir/bin/get_primary_result_from_sam.py -i $Outdir/${file}_chimera/Mapping/${file}_${index}.sam -o $Outdir/${file}_chimera/Mapping/${file}_${index}_uniq.sam
- grep -e "^@" -v $Outdir/${file}_chimera/Mapping/${file}_${index}_uniq.sam > $Outdir/${file}_chimera/Mapping/${file}_${index}_uniq_classify.sam
-fi
-done
-
-python $ccSAGdir/bin/cut_chimera_read.py $Outdir/${file}_chimera/Mapping ${file}
-cat $Outdir/${file}_chimera/Mapping/${file}_normal_001.fastq >> $Outdir/QC/${file}_multicut_chimera.fastq
-mv $Outdir/${file}_chimera/Mapping/${file}_cut_chimera.fastq $Outdir/${file}_chimera/QC
-done
-
-rm $Outdir/${file}_chimera -r
-
-cat $Outdir/QC/${file}_multicut_chimera.fastq $Outdir/QC/${file}_normal_R1_001.fastq $Outdir/QC/${file}_normal_R2_001.fastq > $Outdir/QC/${file}_cleaned.fastq
-
-done
 
 ######
 # Assemble using cleaned fastq
@@ -228,8 +230,8 @@ done
 
 echo -n > $Outdir/QC/cleaned_merge.fastq
 for cleaned_reads in `\ls $Outdir/QC | grep "_QC_cleaned.fastq$"`;
-do
-cat $Outdir/QC/$cleaned_reads >> $Outdir/QC/cleaned_merge.fastq
+    do
+    cat $Outdir/QC/$cleaned_reads >> $Outdir/QC/cleaned_merge.fastq
 done
 
 spades.py $spades_option --threads $num_threads -s $Outdir/QC/cleaned_merge.fastq -o $Outdir/Assemble/cleaned_merge_SPAdes
