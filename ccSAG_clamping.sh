@@ -31,13 +31,10 @@ Options:
 
 Examples:
   # Using short options with required parameters
-  ./ccSAG_clamping.sh -o /path/to/output -r /path/to/rawreads -c cleaned.fasta -C output.fasta -t 20
+  ./ccSAG_clamping.sh -o /path/to/output -r /path/to/rawreads -c cleaned_merge_contigs.fasta -C clamped_contigs.fasta -t 20
 
   # Using config file
   ./ccSAG_clamping.sh -c example_ccSAG_clamping.config
-
-  # Custom SPAdes options
-  ./ccSAG_clamping.sh -o /path/to/output -r /path/to/rawreads -c cleaned.fasta -C output.fasta -O "-m 512 --careful -t 20"
 
 EOF
 }

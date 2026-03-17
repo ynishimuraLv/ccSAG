@@ -46,7 +46,6 @@ chmod +x ccSAG_clamping.sh
 * Assembling contig clamps using non-cleaned reads by SPAdes  
 * connecting cleaned contigs by contig clamps using blastn  
 
-#### example config is prepared in "example" directory as 2-1.  
 #### try after executing 2-1(ccSAG_cross_reference_cleaning.sh)
 ```
 ./ccSAG_clamping.sh  -o test -r example/Rawdata -c example/cleaned_merge_contigs.fasta -C clamped_contigs.fasta -t 20

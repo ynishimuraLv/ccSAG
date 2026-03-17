@@ -29,16 +29,10 @@ Options:
 
 Examples:
   # Using short options with required parameters
-  bash ccSAG_cross_reference_cleaning.sh -o /path/to/output -s /path/to/raw/data -C cleaned.fasta
-
-  # With thread specification
-  bash ccSAG_cross_reference_cleaning.sh -o /path/to/output -s /path/to/raw/data -C cleaned.fasta -t 4
+  ./ccSAG_cross_reference_cleaning.sh -o /path/to/output -s /path/to/raw/data -C cleaned_merge_contigs.fasta -t 20
 
   # Using config file
-  bash ccSAG_cross_reference_cleaning.sh -c example_ccSAG_cross_reference_cleaning.config -t 4
-
-  # Custom SPAdes options
-  bash ccSAG_cross_reference_cleaning.sh -o /path/to/output -s /path/to/raw/data -C cleaned.fasta -O "-m 512 --careful"
+  ./ccSAG_cross_reference_cleaning.sh -c example_ccSAG_cross_reference_cleaning.config
 
 EOF
 }
