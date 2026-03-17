@@ -1,6 +1,4 @@
-#!/bin/sh
-#$ -S /bin/sh
-#$ -cwd
+#!/usr/bin/env bash+
 
 ccSAGdir=$(dirname $0)
 
@@ -11,6 +9,7 @@ Rawreaddir=""
 cleaned_contig=""
 outcontig=""
 spades_option="-m 256 --sc --disable-rr --careful --disable-gzip-output "
+num_threads=1
 
 # Help function
 show_help() {
@@ -27,17 +26,18 @@ Options:
   -c, --cleaned-contig <file>   Cleaned contig input file (required)
   -C, --outcontig <file>        Output contig filename (required)
   -O, --spades-option '<opts>'  SPAdes assembly options (default: "-m 256 --sc --disable-rr --careful --disable-gzip-output ")
+  -t, --threads <int>           Number of threads to use (default: 1)
   -h, --help                    Show this help message
 
 Examples:
   # Using short options with required parameters
-  sh ccSAG_clamping.sh -o /path/to/output -r /path/to/rawreads -c cleaned.fasta -C output.fasta
+  ./ccSAG_clamping.sh -o /path/to/output -r /path/to/rawreads -c cleaned.fasta -C output.fasta -t 20
 
   # Using config file
-  sh ccSAG_clamping.sh -c example_ccSAG_clamping.config
+  ./ccSAG_clamping.sh -c example_ccSAG_clamping.config
 
   # Custom SPAdes options
-  sh ccSAG_clamping.sh -o /path/to/output -r /path/to/rawreads -c cleaned.fasta -C output.fasta -O "-m 512 --careful"
+  ./ccSAG_clamping.sh -o /path/to/output -r /path/to/rawreads -c cleaned.fasta -C output.fasta -O "-m 512 --careful -t 20"
 
 EOF
 }
@@ -71,6 +71,10 @@ while [ $# -gt 0 ]; do
             ;;
         --spades-option|-O)
             spades_option="$2"
+            shift 2
+            ;;
+        --threads|-t)
+            num_threads="$2"
             shift 2
             ;;
         *)
@@ -114,18 +118,15 @@ if [ -s $Outdir/raw_SAG_merge_contigs.fasta ]; then
     echo "Skipped raw-merged-contig assembly."
 else
 
-echo -n > $Outdir/raw_merge_R1_001.fastq
-echo -n > $Outdir/raw_merge_R2_001.fastq
-for raw_reads in `ls $Rawreaddir | grep "_R1_001.fastq$" | sed 's/_R1_001.fastq/\t/g'`;
-do
-cat $Rawreaddir/${raw_reads}_R1_001.fastq >> $Outdir/raw_merge_R1_001.fastq
-cat $Rawreaddir/${raw_reads}_R2_001.fastq >> $Outdir/raw_merge_R2_001.fastq
-done
+    r1_example=$(printf "%s\n" "$Rawreaddir"/*_R1_* | head -n1)
+    suffix=${r1_example##*_R1_}
+    cat "$Rawreaddir"/*_R1_"$suffix" > "$Outdir/raw_merge_R1_$suffix"
+    cat "$Rawreaddir"/*_R2_"$suffix" > "$Outdir/raw_merge_R2_$suffix"
 
-spades.py $spades_option -1 $Outdir/raw_merge_R1_001.fastq -2 $Outdir/raw_merge_R2_001.fastq -o $Outdir/raw_merge_SPAdes
-cp $Outdir/raw_merge_SPAdes/contigs.fasta $Outdir/raw_SAG_merge_contigs.fasta
-rm $Outdir/raw_merge_SPAdes/ -r
-rm $Outdir/raw_merge_R1_001.fastq $Outdir/raw_merge_R2_001.fastq
+    spades.py $spades_option -1 $Outdir/raw_merge_R1_$suffix -2 $Outdir/raw_merge_R2_$suffix -o $Outdir/raw_merge_SPAdes -t $num_threads
+    cp $Outdir/raw_merge_SPAdes/contigs.fasta $Outdir/raw_SAG_merge_contigs.fasta
+    rm $Outdir/raw_merge_SPAdes/ -r
+    rm $Outdir/raw_merge_R1_$suffix $Outdir/raw_merge_R2_$suffix
 
 fi
 
