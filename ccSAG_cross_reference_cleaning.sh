@@ -1,6 +1,4 @@
-#!/bin/sh
-#$ -S /bin/sh
-#$ -cwd
+#!/usr/bin/env bash
 
 ccSAGdir=$(dirname $0)
 
@@ -127,7 +125,7 @@ for r1 in "$Seqdir"/*_R1*.f*q*; do
     else
     fastp -q 25 -u 50 -3 -Q 20 \
           -i $r1 -I $r2 \
-          -o $Outdir/QC/${sample}_QC_R1_001.fastq -O $Outdir/QC/${sample}_QC_R2_001.fastq \
+          -o $Outdir/QC/${sample}_QC_R1.fq.gz -O $Outdir/QC/${sample}_QC_R2.fq.gz \
           -h $Outdir/QC/${sample}.html -j $Outdir/QC/${sample}.json \
           --thread $num_threads
 
@@ -141,8 +139,8 @@ for r1 in "$Seqdir"/*_R1*.f*q*; do
     else
 
         spades.py $spades_option --threads $num_threads \
-                  -1 $Outdir/QC/${sample}_QC_R1_001.fastq \
-                  -2 $Outdir/QC/${sample}_QC_R2_001.fastq \
+                  -1 $Outdir/QC/${sample}_QC_R1.fq.gz \
+                  -2 $Outdir/QC/${sample}_QC_R2.fq.gz \
                   -o $Outdir/Assemble/${sample}_QC_SPAdes
         cp $Outdir/Assemble/${sample}_QC_SPAdes/contigs.fasta $Outdir/Assemble/${sample}_QC_contigs.fasta
         rm $Outdir/Assemble/${sample}_QC_SPAdes/ -r
@@ -217,7 +215,7 @@ for r1 in "$Outdir/QC"/*_QC_R1.fq.gz; do
         cat $Outdir/${file}_chimera/Mapping/${file}_normal_001.fastq >> $Outdir/QC/${file}_multicut_chimera.fastq
         mv $Outdir/${file}_chimera/Mapping/${file}_cut_chimera.fastq $Outdir/${file}_chimera/QC
     done
-    rm $Outdir/${file}_chimera -r
+    rm -r $Outdir/${file}_chimera
 
     cat $Outdir/QC/${file}_multicut_chimera.fastq $Outdir/QC/${file}_normal_R1_001.fastq $Outdir/QC/${file}_normal_R2_001.fastq > $Outdir/QC/${file}_cleaned.fastq
 
