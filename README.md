@@ -16,6 +16,7 @@ At first, clone this repository and change the file permission.
 ```
 git clone https://github.com/ynishimuraLv/ccSAG.git
 cd ccSAG
+git switch fix
 chmod +x ccSAG_cross_reference_cleaning.sh
 chmod +x ccSAG_clamping.sh
 ```
@@ -51,7 +52,7 @@ chmod +x ccSAG_clamping.sh
 ./ccSAG_clamping.sh  -o test -r example/Rawdata -c example/cleaned_merge_contigs.fasta -C clamped_contigs.fasta -t 20
 ```
 
-- The parameters can be also provided via a configuration file specified with the `-c` option.
+- The parameters can be also provided via a configuration file specified with the `--config` option.
 - An example is ccSAG_clamping.config. 
 
 #### As the output files,  
